@@ -14,12 +14,13 @@ public class fspotDbMerge {
 	 */
 	public static void main(String[] args) throws SQLiteException {
 		
-		Getopt opts = new Getopt("fspotDbMerge",args,"l:r:s:d:h");
+		Getopt opts = new Getopt("fspotDbMerge",args,"l:r:s:d:hv");
 		int c;
 		String local_base="";
 		String remote_base="";
 		String source_db="";
 		String destination_db="";
+		boolean verbose=false;
 		while ((c = opts.getopt()) != -1)
 		   {
 		     switch(c)
@@ -39,11 +40,16 @@ public class fspotDbMerge {
 		       		case 'h':
 		       			System.out.println("Usage: fpotDbMerge -l local_base -r remote_base -s source_db -d destination_db");
 		       			break;
+		       		case 'v':
+		       			verbose = true;
 		       		default:
 		       			break;
 		       }
 		   }
 		
+		System.out.println("Will merge "+source_db+" with "+destination_db);
+		System.out.println("changing "+local_base+" to "+remote_base);
+		System.out.println();
 		SQLiteConnection dbSource = new SQLiteConnection(new File(source_db));
 		dbSource.open(true);
 		
@@ -73,7 +79,7 @@ public class fspotDbMerge {
 	    			  stRemoteRoll.reset();
 	    			  stRemoteRoll.bind(1, stSrcRoll.columnLong(0));
 	    			  if (!stRemoteRoll.hasRow()) {
-	    				  System.out.println("Will insert "+stSrcRoll.columnLong(0)+" roll");
+	    				  if (verbose) System.out.println("Will insert "+stSrcRoll.columnLong(0)+" roll");
 	    				  stInsertRoll.reset();
 	    				  stInsertRoll.bind(1, stSrcRoll.columnLong(0));
 	    				  stInsertRoll.step();
@@ -94,11 +100,11 @@ public class fspotDbMerge {
 	    			  System.out.println("Error inserting roll (inserted roll not found)!");
 	    			  continue;
 	    		  }
-	    		  System.out.println("Roll id is "+roll);
+	    		  if (verbose) System.out.println("Roll id is "+roll);
 	    		  String base_uri=stSrcPhotos.columnString(2);
 	    		  base_uri = base_uri.replaceFirst(local_base, remote_base);
-	    		  System.out.println("base_uri is now "+base_uri);
-	    		  System.out.println("Will insert "+stSrcPhotos.columnString(3)+" photo");
+	    		  if (verbose) System.out.println("base_uri is now "+base_uri);
+	    		  if (verbose) System.out.println("Will insert "+stSrcPhotos.columnString(3)+" photo");
 	    		  stInsertPhoto.reset();
 	    		  stInsertPhoto.bind(1, stSrcPhotos.columnLong(1));
 	    		  stInsertPhoto.bind(2, base_uri);
@@ -121,10 +127,10 @@ public class fspotDbMerge {
 		    	  stLocalVersions.reset();
 		    	  stLocalVersions.bind(1, stSrcPhotos.columnLong(0));
 		    	  while (stLocalVersions.step()) {
-		    		  System.out.println("Will insert "+stLocalVersions.columnString(1)+" version");
+		    		  if (verbose) System.out.println("Will insert "+stLocalVersions.columnString(1)+" version");
 		    		  String base_uri_ver=stLocalVersions.columnString(2);
 		    		  base_uri_ver = base_uri_ver.replaceFirst(local_base, remote_base);
-		    		  System.out.println("base_uri for version is now "+base_uri_ver);
+		    		  if (verbose) System.out.println("base_uri for version is now "+base_uri_ver);
 		    		  //photo_id,version_id,name,base_uri,filename,md5_sum,protected
 		    		  //version_id,name,base_uri,filename,md5_sum,protected
 		    		  stInsertVersion.reset();
@@ -149,7 +155,7 @@ public class fspotDbMerge {
 	    }
 	    dbSource.dispose();
 	    dbDestination.dispose();
-		
+		System.out.println("Merge complete!");
 	}
 
 }
