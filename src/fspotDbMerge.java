@@ -12,6 +12,11 @@ public class fspotDbMerge {
 	 * @param args
 	 * @throws SQLiteException 
 	 */
+	public static void usage(Integer res) {
+		System.out.println("Usage: fpotDbMerge -l local_base -r remote_base -s source_db -d destination_db");
+		System.exit(res);
+	}
+	
 	public static void main(String[] args) throws SQLiteException {
 		
 		Getopt opts = new Getopt("fspotDbMerge",args,"l:r:s:d:hv");
@@ -38,7 +43,7 @@ public class fspotDbMerge {
 		       			destination_db=opts.getOptarg();
 	       				break;
 		       		case 'h':
-		       			System.out.println("Usage: fpotDbMerge -l local_base -r remote_base -s source_db -d destination_db");
+		       			usage(0);
 		       			break;
 		       		case 'v':
 		       			verbose = true;
@@ -46,7 +51,7 @@ public class fspotDbMerge {
 		       			break;
 		       }
 		   }
-		
+		if (source_db.equals("")||destination_db.equals("")) usage(1);
 		System.out.println("Will merge "+source_db+" with "+destination_db);
 		System.out.println("changing "+local_base+" to "+remote_base);
 		System.out.println();
