@@ -50,25 +50,25 @@ public class fspotDbMerge {
 		SQLiteConnection dbDestination = new SQLiteConnection(new File(destination_db));
 		dbDestination.open(true);
 		
-		SQLiteStatement stSrcFotos = dbSource.prepare("SELECT id,time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum from photos");
-		SQLiteStatement stRemoteFotos = dbDestination.prepare("SELECT id,time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum from photos where filename=?"); 
+		SQLiteStatement stSrcPhotos = dbSource.prepare("SELECT id,time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum from photos");
+		SQLiteStatement stRemotePhotos = dbDestination.prepare("SELECT id,time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum from photos where filename=?"); 
 		SQLiteStatement stSrcRoll = dbSource.prepare("SELECT time from rolls where id = ?");
 		SQLiteStatement stRemoteRoll = dbDestination.prepare("SELECT id from rolls where time = ?");
 		SQLiteStatement stLocalVersions = dbSource.prepare("SELECT version_id,name,base_uri,filename,md5_sum,protected from photo_versions where photo_id = ?");
 		
 		SQLiteStatement stInsertRoll = dbDestination.prepare("INSERT into rolls (time) VALUES (?)");
-		SQLiteStatement stInsertFoto = dbDestination.prepare("INSERT into photos (time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum) VALUES (?,?,?,?,?,?,?,?)");
+		SQLiteStatement stInsertPhoto = dbDestination.prepare("INSERT into photos (time,base_uri,filename,description,roll_id,default_version_id,rating,md5_sum) VALUES (?,?,?,?,?,?,?,?)");
 		SQLiteStatement stInsertVersion = dbDestination.prepare("INSERT into photo_versions (photo_id,version_id,name,base_uri,filename,md5_sum,protected) VALUES (?,?,?,?,?,?,?)");
 		
 	    try {
-	      while (stSrcFotos.step()) {
-	    	  stRemoteFotos.reset();
-	    	  stRemoteFotos.bind(1, stSrcFotos.columnString(3));
-	    	  if (!stRemoteFotos.step()) {
+	      while (stSrcPhotos.step()) {
+	    	  stRemotePhotos.reset();
+	    	  stRemotePhotos.bind(1, stSrcPhotos.columnString(3));
+	    	  if (!stRemotePhotos.step()) {
 	    		  Long roll=0L;
 	    		  Long photo_id=0L;
 	    		  stSrcRoll.reset();
-	    		  stSrcRoll.bind(1, stSrcFotos.columnLong(5));
+	    		  stSrcRoll.bind(1, stSrcPhotos.columnLong(5));
 	    		  if (stSrcRoll.step()) {
 	    			  stRemoteRoll.reset();
 	    			  stRemoteRoll.bind(1, stSrcRoll.columnLong(0));
@@ -95,31 +95,31 @@ public class fspotDbMerge {
 	    			  continue;
 	    		  }
 	    		  System.out.println("Roll id is "+roll);
-	    		  String base_uri=stSrcFotos.columnString(2);
+	    		  String base_uri=stSrcPhotos.columnString(2);
 	    		  base_uri = base_uri.replaceFirst(local_base, remote_base);
 	    		  System.out.println("base_uri is now "+base_uri);
-	    		  System.out.println("Will insert "+stSrcFotos.columnString(3)+" foto");
-	    		  stInsertFoto.reset();
-	    		  stInsertFoto.bind(1, stSrcFotos.columnLong(1));
-	    		  stInsertFoto.bind(2, base_uri);
-	    		  stInsertFoto.bind(3, stSrcFotos.columnString(3));
-	    		  stInsertFoto.bind(4, stSrcFotos.columnString(4));
-	    		  stInsertFoto.bind(5, roll);
-	    		  stInsertFoto.bind(6, stSrcFotos.columnLong(6));
-	    		  stInsertFoto.bind(7, stSrcFotos.columnLong(7));
-	    		  stInsertFoto.bind(8, stSrcFotos.columnString(8));
-	    		  stInsertFoto.step();
-	    		  stRemoteFotos.reset();
-	    		  stRemoteFotos.bind(1, stSrcFotos.columnString(3));
-	    		  if (stRemoteFotos.step()) {
-	    			  photo_id=stRemoteFotos.columnLong(0);	    	    	 
+	    		  System.out.println("Will insert "+stSrcPhotos.columnString(3)+" photo");
+	    		  stInsertPhoto.reset();
+	    		  stInsertPhoto.bind(1, stSrcPhotos.columnLong(1));
+	    		  stInsertPhoto.bind(2, base_uri);
+	    		  stInsertPhoto.bind(3, stSrcPhotos.columnString(3));
+	    		  stInsertPhoto.bind(4, stSrcPhotos.columnString(4));
+	    		  stInsertPhoto.bind(5, roll);
+	    		  stInsertPhoto.bind(6, stSrcPhotos.columnLong(6));
+	    		  stInsertPhoto.bind(7, stSrcPhotos.columnLong(7));
+	    		  stInsertPhoto.bind(8, stSrcPhotos.columnString(8));
+	    		  stInsertPhoto.step();
+	    		  stRemotePhotos.reset();
+	    		  stRemotePhotos.bind(1, stSrcPhotos.columnString(3));
+	    		  if (stRemotePhotos.step()) {
+	    			  photo_id=stRemotePhotos.columnLong(0);	    	    	 
 	    		  }
 	    		  if (photo_id==0L) {
 	    			  System.out.println("Error inserting photo (inserted photo not found)!");
 					  continue;	    			  
 	    		  }
 		    	  stLocalVersions.reset();
-		    	  stLocalVersions.bind(1, stSrcFotos.columnLong(0));
+		    	  stLocalVersions.bind(1, stSrcPhotos.columnLong(0));
 		    	  while (stLocalVersions.step()) {
 		    		  System.out.println("Will insert "+stLocalVersions.columnString(1)+" version");
 		    		  String base_uri_ver=stLocalVersions.columnString(2);
@@ -141,8 +141,8 @@ public class fspotDbMerge {
 	      }      
 	    } 
 	    finally {
-	    	stSrcFotos.dispose();
-	    	stRemoteFotos.dispose();
+	    	stSrcPhotos.dispose();
+	    	stRemotePhotos.dispose();
 	    	stSrcRoll.dispose();
 	    	stRemoteRoll.dispose();
 	    	stLocalVersions.dispose();
